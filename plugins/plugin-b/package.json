@@ -1,0 +1,15 @@
+{
+  "name": "plugin-b",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "mamphis <“mattis.wacker@pcsmw.de”>",
+  "license": "ISC",
+  "dependencies": {
+    "plugin-framework": "file:../plugin-framework"
+  }
+}
