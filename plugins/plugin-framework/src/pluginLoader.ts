@@ -5,6 +5,8 @@ import { PluginContext } from './plugin/pluginContext';
 
 export class PluginLoader {
     private plugins: Array<Plugin> = [];
+    private context: PluginContext;
+    private readonly eventEmitter: EventEmitter;
 
     constructor(private appVersion: string) {
         const version = valid(appVersion);
@@ -13,6 +15,8 @@ export class PluginLoader {
         }
 
         this.appVersion = version;
+        this.eventEmitter = new EventEmitter();
+        this.context = new PluginContext(this.eventEmitter);
     }
 
     async loadFrom(directory: string) {
@@ -83,14 +87,19 @@ export class PluginLoader {
         this.plugins.push(plugin);
     }
 
-    async activatePlugins(): Promise<PluginContext> {
-        const context = new PluginContext();
+    async activatePlugins<T>(context: T): Promise<PluginContext & T> {
+        this.context = Object.assign(this.context, context);
+        await Promise.all(
+            this.plugins.map((plugin) => {
+                return plugin.activate(this.context);
+            }),
+        );
 
-        await Promise.all(this.plugins.map((plugin) => {
-            return plugin.activate(context);
-        }));
+        return this.context as PluginContext & T;
+    }
         
-        return context;
+    fireHook(target: string, event: string, sender: any, e: any) {
+        this.eventEmitter.emit('hook', target, event, sender, e);
     }
 }
 
