@@ -1,3 +1,4 @@
+import EventEmitter from 'events';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
 import { valid, gte, gt } from 'semver';
@@ -68,7 +69,13 @@ export class PluginLoader {
             );
         }
 
-        const pluginFunctions = require(join(pluginDir, 'main.js'));
+        let pluginFunctions;
+        try {
+            pluginFunctions = require(join(pluginDir, manifest.entryPoint));
+        } catch (e: any) {
+            return console.log(`cannot load plugin ${manifest.name}: ${e.message} `);
+        }
+
         if (!('activate' in pluginFunctions && typeof pluginFunctions.activate === 'function')) {
             return console.warn(
                 `cannot load plugin ${manifest.name}, because no activation function was found`,
@@ -97,7 +104,7 @@ export class PluginLoader {
 
         return this.context as PluginContext & T;
     }
-        
+
     fireHook(target: string, event: string, sender: any, e: any) {
         this.eventEmitter.emit('hook', target, event, sender, e);
     }
@@ -109,6 +116,7 @@ interface Manifest {
     version: string;
     author: string;
     repositryUrl: string;
+    entryPoint: string;
 }
 
 interface Plugin {
