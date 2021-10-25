@@ -2,6 +2,7 @@ import EventEmitter from 'events';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
 import { valid, gte, gt } from 'semver';
+import { ValidOptionValueTypes } from './plugin/option';
 import { PluginContext } from './plugin/pluginContext';
 
 export class PluginLoader {
@@ -98,7 +99,7 @@ export class PluginLoader {
         this.context = Object.assign(this.context, context);
         await Promise.all(
             this.plugins.map((plugin) => {
-                return plugin.activate(this.context);
+                return plugin.activate(this.context.inContextOf(plugin));
             }),
         );
 
@@ -107,6 +108,14 @@ export class PluginLoader {
 
     fireHook(target: string, event: string, sender: any, e: any) {
         this.eventEmitter.emit('hook', target, event, sender, e);
+    }
+
+    fireOptionChanged(pluginName: string, key: string, newValue: ValidOptionValueTypes) {
+        this.eventEmitter.emit('optionChange', pluginName, key, newValue);
+    }
+
+    get options() {
+        return this.context.getOptions();
     }
 }
 
@@ -119,7 +128,7 @@ interface Manifest {
     entryPoint: string;
 }
 
-interface Plugin {
+export interface Plugin {
     manifest: Manifest;
     versions: { [pluginVersion: string]: string };
     activate: (context: PluginContext) => void;
